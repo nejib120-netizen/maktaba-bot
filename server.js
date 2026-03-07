@@ -80,14 +80,53 @@ async function handleMessage(event) {
     conversations[senderId] = conversations[senderId].slice(-10);
   }
 
+ const GROQ_API_KEY = process.env.GROQ_API_KEY;
+
+async function askGroq(userText, senderId, conversations) {
+  // ذاكرة بسيطة (اختياري)
+  conversations[senderId] = conversations[senderId] || [];
+
+  // أضف رسالة المستخدم للذاكرة
+  conversations[senderId].push({ role: "user", content: userText });
+
+  // قصّ الذاكرة لآخر 10 رسائل مثلاً
+  conversations[senderId] = conversations[senderId].slice(-10);
+
+  const payload = {
+    model: "llama-3.1-8b-instant",
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...conversations[senderId]
+    ],
+    temperature: 0.7
+  };
+
   try {
-    const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    const r = await axios.post(
+      "https://api.groq.com/openai/v1/chat/completions",
+      payload,
       {
-        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: conversations[senderId],
+        headers: {
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+          "Content-Type": "application/json"
+        }
       }
     );
+
+    const reply = r.data?.choices?.[0]?.message?.content?.trim() || "ما نجمتش نجاوب توّا.";
+
+    // أضف ردّ المساعد للذاكرة
+    conversations[senderId].push({ role: "assistant", content: reply });
+    conversations[senderId] = conversations[senderId].slice(-10);
+
+    return reply;
+  } catch (err) {
+    console.error("Groq error:", err.response?.data || err.message);
+    if (err.response?.status === 429) return "الخدمة مزحومة توّا، جرّب بعد شوية.";
+    if (err.response?.status === 401) return "المفتاح متاع Groq غلط/منتهي.";
+    return "آسف، صار مشكل تقني.";
+  }
+}
 
     const reply = response.data.candidates[0].content.parts[0].text;
     conversations[senderId].push({ role: "model", parts: [{ text: reply }] });
