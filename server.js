@@ -154,7 +154,7 @@ app.post('/webhook', async (req, res) => {
     res.sendStatus(404);
   }
 });
-
+app.use(express.static('.'));
 // ===== تشغيل السيرفر =====
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
