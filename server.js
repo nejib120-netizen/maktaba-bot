@@ -133,30 +133,40 @@ async function askGroq(userText, senderId, conversations) {
 
     await sendMessage(senderId, reply);
     console.log(`✉️ رد للزبون: ${reply}`);
+ async function getGroqResponse(messagesHistory) {
+  try {
+    const formattedMessages = [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...messagesHistory.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'assistant',
+        content: msg.text || msg.content
+      }))
+    ];
+
+    const response = await axios.post(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        model: "llama-3.1-8b-instant",
+        messages: formattedMessages,
+        temperature: 0.7,
+        max_tokens: 1024
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    return response.data.choices[0].message.content;
+
   } catch (err) {
-    console.error("خطأ:", err.response?.data || err.message);
-    await sendMessage(senderId, "آسف، صرالي مشكل تقني. عاود حاول بعد شوية 🙏");
-  }
-}
-
-// ===== إرسال رسالة لفيسبوك =====
-async function sendMessage(recipientId, text) {
-  await axios.post(
-    `https://graph.facebook.com/v19.0/me/messages`,
-    { recipient: { id: recipientId }, message: { text } },
-    { params: { access_token: PAGE_ACCESS_TOKEN } }
-  );
-}
-
-async function sendTypingOn(recipientId) {
-  await axios.post(
-    `https://graph.facebook.com/v19.0/me/messages`,
-    { recipient: { id: recipientId }, sender_action: "typing_on" },
-    { params: { access_token: PAGE_ACCESS_TOKEN } }
-  ).catch(() => {});
-}
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 البوت يشتغل على port ${PORT}`);
-});
+    console.error("❌ خطأ Groq:", err.response?.data || err.message);
+    
+    if (err.response?.status === 401) return "مفتاح API غير صالح.";
+    if (err.response?.status === 429) return "الخدمة مزدحمة، حاول لاحقاً.";
+    
+    return "عذراً، حدث خطأ تقني.";
+  } // <--- تأكد وجود هذا القوس هنا
+} // <--- وهذا القوس يغلق الدالة
