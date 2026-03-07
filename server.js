@@ -12,8 +12,7 @@ app.use(express.json());
 // ===== إعدادات =====
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN || "maktaba_secret_2024";
 const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 // ===== شخصية البوت =====
 const SYSTEM_PROMPT = `أنت مساعد ذكي لمكتبة تونسية تُدعى "المكتبة". 
 مهمتك مساعدة الزبائن باللهجة التونسية عبر Facebook Messenger.
