@@ -1,5 +1,5 @@
 /**
- * 📚 بوت مكتبة - Facebook Messenger + Groq AI
+ * 📚 ميار بوت مكتبة - Facebook Messenger + Groq AI
  * تشغيل: node server.js
  */
 
