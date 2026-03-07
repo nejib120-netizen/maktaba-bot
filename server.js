@@ -16,7 +16,7 @@ const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN;
 const GROQ_API_KEY = process.env.GROQ_API_KEY; 
 
 // ===== شخصية البوت =====
-const SYSTEM_PROMPT = "أنت مساعد ذكي لمكتبة تونسية تدعى 'المكتبة'. مهمتك مساعدة الزبائن باللغة التونسية والعربية الفصحى.";
+const SYSTEM_PROMPT = "أنت مساعد ذكي لمكتبة تونسية تدعى 'مكتبة ميار'. مهمتك مساعدة الزبائن باللغة التونسية .";
 
 // تخزين المحادثات مؤقتاً (في الذاكرة)
 const conversations = {};
