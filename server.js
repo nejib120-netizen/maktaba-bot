@@ -62,63 +62,35 @@ const CURRENT_OFFERS = `🎉 عروض مكتبة ميار / Promotions:
 • 5 كراسات = الـ 6 مجانية! / 5 cahiers = le 6ème offert!`;
 
 // ===== شخصية البوت =====
-const SYSTEM_PROMPT = `أنت بائع ذكي لمكتبة ميار منزل كامل - ثنائي اللغة (دارجة تونسية + فرنسية).
-دورك الأساسي هو بيع المنتجات والتواصل مع الحرفاء بطريقة مهنية وودودة.
+const SYSTEM_PROMPT = `أنت أفضل بائع في مكتبة ميار منزل كامل - خبير في البيع والإقناع.
 
-"فين تقع المكتبة؟" → "تلقانا في شارع البيئة، مقابل معهد منزل كامل 📍 هاك الموقع: https://maps.app.goo.gl/3N9tuVpED4GxcpWz9"
-"Où se trouve la librairie ?" → "Rue de l'Environnement, en face du lycée Menzel Kamel 📍 https://maps.app.goo.gl/3N9tuVpED4GxcpWz9"
+🎯 هدفك الأساسي: بيع المنتجات بذكاء واحترافية
 
-🛒 أنت بائع محترف:
-- اقترح منتجات للزبون حسب احتياجاته
-- إذا قال "نحب نشري" أو "je veux acheter"، ساعده يختار
-- اقترح منتجات إضافية (مثلاً: شريت كراس؟ تحب قلم معاه؟)
-- أكّد الطلبية وأعطي السعر الإجمالي
-- اسأل على التوصيل ولا يجي للمكتبة
+🧠 مهاراتك:
+- تفهم احتياجات الزبون من أول جملة
+- تقترح الحل المثالي بناءً على الميزانية والاحتياج
+- تحسب الأسعار بدقة 100%
+- تقنع الزبون بطريقة لطيفة ومهنية
+- تقترح عروض ذكية (باكاجات، منتجات مكملة)
+- تجاوب بالدارجة التونسية أو الفرنسية حسب لغة الزبون
 
-📦 عند تأكيد الطلبية:
-- اكتب "✅ طلبيتك:" + تفاصيل المنتجات + السعر الإجمالي
-- اسأل: "تحب توصيل ولا تجي للمكتبة؟"
-- إذا توصيل: اسأل على العنوان
-- إذا يجي: أعطيه أوقات العمل
+📚 أمثلة على ذكائك في البيع:
+- زبون قال "عندي ولد في 5ème" → تقترحله كل ما يحتاج (كراسات حسب المواد، أدوات هندسة، أقلام...)
+- زبون قال "ميزانيتي 20 دينار" → تعطيه باكاجات ذكية بالضبط في الميزانية
+- زبون متردد → تعطيه معلومات أكثر + تذكره بالعروض
+- زبون شرى كراسات → تقترحله أقلام معاهم
 
-قائمة المنتجات والأسعار:
-كراسات:
-- كراس مسطر/كوس: 1.500 DT
-- كراس رسم/موسيقى: 2.000 DT
-أقلام:
-- قلم حبر: 0.800 DT
-- قلم رصاص: 0.500 DT
-- أقلام ألوان 12 لون: 4.500 DT
-- فلوماستر 12: 6.000 DT
-أدوات هندسية:
-- مسطرة: 1.000 DT
-- طقم هندسة كامل: 5.000 DT
-أخرى:
-- محفظة: 3.000 DT
-- غراء: 1.200 DT
-- مقص: 2.000 DT
-- حقيبة مدرسية: 25.000 DT
+💰 قائمة الأسعار (احفظها جيداً):
+[نفس القائمة...]
 
-معلومات المكتبة:
-- العنوان: شارع البيئة، مقابل معهد منزل كامل
-- الموقع: https://maps.app.goo.gl/3N9tuVpED4GxcpWz9
-- ساعات العمل: 8h - 19h
-- التوصيل: متوفر داخل منزل كامل (2.000 DT مصاريف التوصيل)
-- الدفع: عند الاستلام
-- هاتف: 29464720
-
-🌐 قواعد اللغة:
-- عربي/دارجة → جاوب بالدارجة
-- فرنسية → جاوب بالفرنسية
-
-تعليمات البيع:
-- كون ودود ومحترف
-- اقترح عروض ومنتجات إضافية دائماً
-- شجّع الزبون على الشراء بطريقة لطيفة
-- إذا الزبون متردد، أعطيه معلومات أكثر على المنتج
-- بعد كل طلبية، اشكر الزبون
-- ما تتكلمش على كتب أو خدمات خارج المكتبة`;
-
+🎯 أسلوبك في البيع:
+1. افهم الاحتياج
+2. اقترح الحل المثالي
+3. احسب السعر بدقة
+4. اقترح منتجات إضافية
+5. شجع على الشراء
+6. أكد الطلبية بوضوح
+كون ودود، محترف، ذكي، ومقنع. هدفك: زبون راضي + طلبية مؤكدة.`;
 // ===== تخزين =====
 const conversations = {};
 const awaitingRating = {};
@@ -479,20 +451,52 @@ async function sendMessageWithQuickReplies(recipientId, text, replies) {
   ).catch(e => console.error("Quick reply error:", e.response?.data));
 }
 
-async function sendMessage(recipientId, text) {
-  await axios.post(
-    `https://graph.facebook.com/v18.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`,
-    { recipient: { id: recipientId }, message: { text } }
-  ).catch(e => console.error("Send error:", e.response?.data));
-}
+async function getGroqResponse(senderId, userText) {
+  if (!conversations[senderId]) conversations[senderId] = [];
+  conversations[senderId].push({ role: "user", text: userText });
+  if (conversations[senderId].length > 20) {
+    conversations[senderId] = conversations[senderId].slice(-20);
+  }
 
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+  try {
+    const cartInfo = customerCarts[senderId]?.length > 0
+      ? `\n\n[معلومات مهمة: سلة الزبون الحالية تحتوي على ${customerCarts[senderId].length} منتج]`
+      : "\n\n[سلة الزبون فارغة - شجعه على الشراء]";
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 البوت يعمل على المنفذ ${PORT}`);
-  console.log(`📊 إحصاءات: http://localhost:${PORT}/stats`);
-  console.log(`📦 طلبيات: http://localhost:${PORT}/orders`);
-});
+    const formattedMessages = [
+      { role: "system", content: SYSTEM_PROMPT + cartInfo },
+      ...conversations[senderId].map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'assistant',
+        content: msg.text
+      }))
+    ];
+
+    const response = await axios.post(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        model: "llama-3.3-70b-versatile",  // ✅ الأفضل مجاني
+        messages: formattedMessages,
+        temperature: 0.6,  // ⬅️ 0.6 = توازن بين الدقة والإبداع
+        max_tokens: 1200,  // ⬅️ ردود أطول وأوضح
+        top_p: 0.9,       // ⬅️ جودة أفضل
+        frequency_penalty: 0.3,  // ⬅️ تنوع في الردود
+        presence_penalty: 0.3    // ⬅️ أفكار جديدة
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${GROQ_API_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    const replyText = response.data.choices[0].message.content;
+    conversations[senderId].push({ role: "assistant", text: replyText });
+    return replyText;
+
+  } catch (err) {
+    console.error("❌ خطأ في Groq:", err.response?.data || err.message);
+    if (err.response?.status === 429) return "الخدمة مزدحمة، حاول بعد شوية 🙏";
+    return "آسف، حدث خطأ. اتصل بنا: " + PHONE_NUMBER;
+  }
+}
