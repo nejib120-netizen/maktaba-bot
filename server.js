@@ -314,12 +314,13 @@ async function getGroqResponse(senderId, userText) {
 // دالة تكشف الصف من الرسالة
 function detectGrade(text) {
   const t = text.toLowerCase();
-  if (t.includes("سنة 1") || t.includes("1ère") || t.includes("première") || t.includes("الأولى") || t.includes("اول")) return "1";
-  if (t.includes("سنة 2") || t.includes("2ème") || t.includes("deuxième") || t.includes("الثانية") || t.includes("ثاني")) return "2";
-  if (t.includes("سنة 3") || t.includes("3ème") || t.includes("troisième") || t.includes("الثالثة") || t.includes("ثالث")) return "3";
-  if (t.includes("سنة 4") || t.includes("4ème") || t.includes("quatrième") || t.includes("الرابعة") || t.includes("رابع")) return "4";
-  if (t.includes("سنة 5") || t.includes("5ème") || t.includes("cinquième") || t.includes("الخامسة") || t.includes("خامس")) return "5";
-  if (t.includes("سنة 6") || t.includes("6ème") || t.includes("sixième") || t.includes("السادسة") || t.includes("سادس")) return "6";
+  // كشف الأرقام مباشرة من الأزرار أو النص
+  if (t.includes("1") && (t.includes("سنة") || t.includes("nة") || t.includes("1ère") || t.includes("première") || t.includes("اول") || t.includes("الأولى"))) return "1";
+  if (t.includes("2") && (t.includes("سنة") || t.includes("nة") || t.includes("2ème") || t.includes("deuxième") || t.includes("ثاني") || t.includes("الثانية"))) return "2";
+  if (t.includes("3") && (t.includes("سنة") || t.includes("nة") || t.includes("3ème") || t.includes("troisième") || t.includes("ثالث") || t.includes("الثالثة"))) return "3";
+  if (t.includes("4") && (t.includes("سنة") || t.includes("nة") || t.includes("4ème") || t.includes("quatrième") || t.includes("رابع") || t.includes("الرابعة"))) return "4";
+  if (t.includes("5") && (t.includes("سنة") || t.includes("nة") || t.includes("5ème") || t.includes("cinquième") || t.includes("خامس") || t.includes("الخامسة"))) return "5";
+  if (t.includes("6") && (t.includes("سنة") || t.includes("nة") || t.includes("6ème") || t.includes("sixième") || t.includes("سادس") || t.includes("السادسة"))) return "6";
   return null;
 }
 
@@ -421,26 +422,28 @@ async function handleMessage(event) {
     return;
   }
 
-  // كشف الصف تلقائياً
+  // كشف الصف تلقائياً → دائماً يبعث القائمة الكاملة
   const grade = detectGrade(text);
   if (grade) {
     customerInfo[senderId].lastGrade = grade;
-    const wantsTools = lowerText.includes("أدوات") || lowerText.includes("ادوات") || lowerText.includes("قائمة") || lowerText.includes("liste") || lowerText.includes("détail");
-    const pkg = formatPackage(grade, wantsTools);
+    const pkg = formatPackage(grade, true);
     await sendMessage(senderId, pkg);
     await delay(600);
     await sendMessageWithQuickReplies(senderId,
       "تحب تطلب هذا الباكج؟ 😊",
-      ["✅ نعم، نطلبه", wantsTools ? "📦 باكج آخر" : "📋 أدوات السنة", "📞 Appeler"]
+      ["✅ نعم، نطلبه", "📦 باكج آخر", "📞 Appeler"]
     );
     return;
   }
 
-  // طلب التفصيل أو الأدوات
+  // طلب السعر أو التفصيل → يبعث القائمة الكاملة إذا عنده سنة محفوظة
   const wantsDetail = lowerText.includes("تفصيل") || lowerText.includes("détail") ||
     lowerText.includes("أدوات") || lowerText.includes("ادوات") ||
     lowerText.includes("فيه شنوة") || lowerText.includes("شنوة فيه") ||
-    lowerText.includes("ممكن") || text === "📋 أدوات السنة";
+    lowerText.includes("ممكن") || lowerText.includes("ثمن") ||
+    lowerText.includes("بكم") || lowerText.includes("بكاش") ||
+    lowerText.includes("combien") || lowerText.includes("prix") ||
+    lowerText.includes("tarif") || text === "📋 أدوات السنة";
 
   if (wantsDetail && customerInfo[senderId]?.lastGrade) {
     const pkg = formatPackage(customerInfo[senderId].lastGrade, true);
@@ -448,6 +451,15 @@ async function handleMessage(event) {
     await delay(600);
     await sendMessageWithQuickReplies(senderId, "تحب تطلب؟ 😊",
       ["✅ نعم، نطلبه", "📦 باكج آخر", "📞 Appeler"]
+    );
+    return;
+  }
+
+  // إذا سأل على الثمن بدون ما حدد سنة
+  if (wantsDetail && !customerInfo[senderId]?.lastGrade) {
+    await sendMessageWithQuickReplies(senderId,
+      "📦 أي سنة تحب نعطيك الثمن ديالها؟",
+      ["📦 Sنة 1", "📦 Sنة 2", "📦 Sنة 3", "📦 Sنة 4", "📦 Sنة 5", "📦 Sنة 6"]
     );
     return;
   }
