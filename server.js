@@ -479,9 +479,7 @@ async function getGroqResponse(senderId, userText) {
         temperature: 0.6,  // ⬅️ 0.6 = توازن بين الدقة والإبداع
         max_tokens: 1200,  // ⬅️ ردود أطول وأوضح
         top_p: 0.9,       // ⬅️ جودة أفضل
-        frequency_penalty: 0.3,  // ⬅️ تنوع في الردود
-        presence_penalty: 0.3    // ⬅️ أفكار جديدة
-      },
+        },
       {
         headers: {
           "Authorization": `Bearer ${GROQ_API_KEY}`,
