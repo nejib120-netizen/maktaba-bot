@@ -237,9 +237,11 @@ const SYSTEM_PROMPT = `Tu es le vendeur expert de la Librairie Mayar à Menzel K
 - Une seule question par réponse
 
 🚫 INTERDIT:
-- Dire "غالي" ou "cher"  
+- Dire "غالي" ou "cher"
 - Répéter "Librairie Mayar" plus d'une fois
 - Mélanger arabe et français dans le même message
+- JAMAIS inventer ou mentionner les prix des packs (110DT, 120DT...)
+- Si on demande le contenu d'un pack → dis "le bot va t'envoyer la liste complète"
 
 ✅ STYLE VENDEUR:
 - Prix toujours "ممتاز" / "excellent" / "très abordable"
@@ -434,8 +436,13 @@ async function handleMessage(event) {
     return;
   }
 
-  // طلب أدوات سنة بعد ما شاف الملخص
-  if (text === "📋 أدوات السنة" && customerInfo[senderId]?.lastGrade) {
+  // طلب التفصيل أو الأدوات
+  const wantsDetail = lowerText.includes("تفصيل") || lowerText.includes("détail") ||
+    lowerText.includes("أدوات") || lowerText.includes("ادوات") ||
+    lowerText.includes("فيه شنوة") || lowerText.includes("شنوة فيه") ||
+    lowerText.includes("ممكن") || text === "📋 أدوات السنة";
+
+  if (wantsDetail && customerInfo[senderId]?.lastGrade) {
     const pkg = formatPackage(customerInfo[senderId].lastGrade, true);
     await sendMessage(senderId, pkg);
     await delay(600);
