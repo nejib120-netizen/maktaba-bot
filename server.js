@@ -1,5 +1,6 @@
 /**
  * 📚 بوت مكتبة ميار - Facebook Messenger + Groq AI
+ * ميزات: ترحيب، بيع، سلة مشتريات، عروض، تقييم، إحصاء، تحويل لتليفون
  */
 
 const express = require("express");
@@ -30,53 +31,60 @@ function updateStats() {
   }
 }
 
-const CURRENT_OFFERS = `🎉 Promotions Mayar:
-• Cahiers dessin -20%
-• Crayons couleur -15%
-• 5 cahiers achetés = le 6ème offert!`;
+const PRODUCTS = {
+  "كراس مسطر": { price: 1.5, nameFR: "Cahier ligné" },
+  "كراس كوس": { price: 1.5, nameFR: "Cahier quadrillé" },
+  "كراس رسم": { price: 2.0, nameFR: "Cahier de dessin" },
+  "كراس موسيقى": { price: 2.0, nameFR: "Cahier de musique" },
+  "قلم حبر": { price: 0.8, nameFR: "Stylo à encre" },
+  "قلم رصاص": { price: 0.5, nameFR: "Crayon" },
+  "أقلام ألوان 12": { price: 4.5, nameFR: "Crayons couleur 12" },
+  "فلوماستر 12": { price: 6.0, nameFR: "Feutres 12 couleurs" },
+  "مسطرة": { price: 1.0, nameFR: "Règle" },
+  "أدوات هندسة كاملة": { price: 5.0, nameFR: "Kit géométrie" },
+  "محفظة": { price: 3.0, nameFR: "Pochette" },
+  "غراء": { price: 1.2, nameFR: "Colle" },
+  "مقص": { price: 2.0, nameFR: "Ciseaux" },
+  "حقيبة مدرسية": { price: 25.0, nameFR: "Cartable" },
+};
 
-const SYSTEM_PROMPT = `Tu es le vendeur de la Librairie Mayar à Menzel Kamel.
+const CURRENT_OFFERS = `🎉 عروض مكتبة ميار / Promotions:
+• كراسات الرسم بـ -20% / Cahiers dessin -20%
+• أقلام الألوان الكبيرة بـ -15% / Crayons couleur -15%
+• 5 كراسات = الـ 6 مجانية! / 5 cahiers = le 6ème offert!`;
 
-🌐 LANGUE - RÈGLE ABSOLUE:
-- Message en français → réponds UNIQUEMENT en français
-- Message en arabe/dialecte → réponds UNIQUEMENT en dialecte tunisien
-- Exemples de dialecte tunisien OBLIGATOIRES:
-  * "شنوة" (pas "إيه" أو "ماذا")
-  * "بكاش" (pas "بكام")  
-  * "نجم" (pas "أقدر" أو "أعرف")
-  * "باهي" (pas "تمام" أو "أوكي")
-  * "يزي" (pas "كفاية")
-  * "واش" (pas "هل")
-  * "حبيت" (pas "أردت")
-  * "برشة" (pas "كثير")
-  * "نحب نشري" (pas "أريد أن أشتري")
-- Ne mélange JAMAIS les deux langues dans le même message
+const SYSTEM_PROMPT = `أنت بائع محترف في مكتبة ميار بمنزل كامل، تونس.
 
-✂️ LONGUEUR - RÈGLE ABSOLUE:
-- Maximum 3 lignes par réponse
-- Ne répète jamais la même information deux fois
-- Une seule question à la fois
-- Pas de listes longues sauf si demandé explicitement
+🌐 اللغة — قاعدة صارمة جداً:
+- رسالة بالفرنسية → جاوب بالفرنسية UNIQUEMENT، ممنوع تحط كلمة عربية
+- رسالة بالعربية أو الدارجة → جاوب بالدارجة التونسية UNIQUEMENT، ممنوع تحط كلمة فرنسية
 
-🚫 INTERDIT:
-- Répéter "Librairie Mayar" plus d'une fois par message
-- Dire "غالي" ou "cher"
-- Répéter ce qui a déjà été dit dans la conversation
+🗣️ الدارجة التونسية — كلمات إجبارية:
+شنوة (مش إيه/ماذا) | بكاش (مش بكام) | نجم (مش أقدر) | باهي (مش تمام)
+يزي (مش كفاية) | واش (مش هل) | برشة (مش كثير) | هاك (مش هذا)
+تحب (مش تريد) | قداش (مش كم) | مليح (مش جيد) | يعطيك الصحة (للشكر)
+ما تستعملش أبداً: عايز، إزيك، تمام، أهلاً، جداً، ماذا، كيف حالك
 
-✅ STYLE:
-- Direct, chaleureux, professionnel
-- Encourage l'achat naturellement
-- Prix toujours "excellent" et "abordable"
+✂️ الردود — قاعدة صارمة:
+- 3 أسطر maximum
+- ما تكررش نفس المعلومة مرتين أبداً
+- سؤال واحد بس في الرد
 
-💰 PRIX:
-Cahiers: mسطر/كوس 1.500DT | رسم/موسيقى 2.000DT
-Stylos: حبر 0.800DT | رصاص 0.500DT | ألوان 12 4.500DT | فلوماستر 6.000DT
-Géométrie: مسطرة 1.000DT | طقم 5.000DT
-Autres: محفظة 3.000DT | غراء 1.200DT | مقص 2.000DT | حقيبة 25.000DT
+🚫 ممنوعات: "غالي"، "cher"، "غالية"، خلط اللغات
 
-📍 ADRESSE: Rue de l'Environnement, en face du lycée Menzel Kamel
-🗺️ Maps: https://maps.app.goo.gl/3N9tuVpED4GxcpWz9
-🕐 Horaires: 8h-19h | 📞 29464720 | Livraison: 2.000DT`;
+✅ أسلوب البيع: الأسعار "رخيصة وممتازة" دايماً، اقترح باكاجات، شجع على الشراء
+
+📍 الموقع:
+بالدارجة: "تلقانا في شارع البيئة، مقابل معهد منزل كامل 📍 https://maps.app.goo.gl/3N9tuVpED4GxcpWz9"
+بالفرنسية: "Rue de l'Environnement, face au lycée Menzel Kamel 📍 https://maps.app.goo.gl/3N9tuVpED4GxcpWz9"
+
+💰 الأسعار:
+كراسات: مسطر/كوس 1.5DT | رسم/موسيقى 2DT
+أقلام: حبر 0.8DT | رصاص 0.5DT | ألوان×12 4.5DT | فلوماستر 6DT
+هندسة: مسطرة 1DT | طقم 5DT
+أخرى: محفظة 3DT | غراء 1.2DT | مقص 2DT | حقيبة 25DT
+🎉 عروض: 5 كراسات=الـ6 مجاني | رسم -20% | ألوان -15%
+معلومات: 8h-19h | توصيل 2DT | دفع عند الاستلام | هاتف: 29464720`;
 
 const conversations = {};
 const awaitingRating = {};
@@ -92,8 +100,12 @@ async function getGroqResponse(senderId, userText) {
   }
 
   try {
+    const cartInfo = customerCarts[senderId]?.length > 0
+      ? `\n[سلة الزبون: ${customerCarts[senderId].length} منتج]`
+      : "\n[السلة فارغة - شجعه على الشراء]";
+
     const formattedMessages = [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: SYSTEM_PROMPT + cartInfo },
       ...conversations[senderId].map(msg => ({
         role: msg.role === 'user' ? 'user' : 'assistant',
         content: msg.text
@@ -106,7 +118,8 @@ async function getGroqResponse(senderId, userText) {
         model: "llama-3.3-70b-versatile",
         messages: formattedMessages,
         temperature: 0.5,
-        max_tokens: 400,
+        max_tokens: 500,
+        top_p: 0.9
       },
       {
         headers: {
@@ -121,9 +134,9 @@ async function getGroqResponse(senderId, userText) {
     return replyText;
 
   } catch (err) {
-    console.error("❌ خطأ في Groq:", err.response?.data || err.message);
-    if (err.response?.status === 429) return "Service occupé, réessayez dans un moment 🙏";
-    return `Désolé, erreur technique. Appelez-nous: ${PHONE_NUMBER}`;
+    console.error("خطأ في Groq:", err.response?.data || err.message);
+    if (err.response?.status === 429) return "الخدمة مزدحمة، حاول بعد شوية 🙏";
+    return "آسف، صرالي مشكل. اتصل بنا: " + PHONE_NUMBER;
   }
 }
 
@@ -146,7 +159,8 @@ app.get('/stats', (req, res) => {
     totalOrders: stats.totalOrders,
     todayOrders: stats.todayOrders,
     activeConversations: Object.keys(conversations).length,
-    date: new Date().toLocaleDateString('fr-TN'),
+    activeCarts: Object.keys(customerCarts).filter(k => customerCarts[k]?.length > 0).length,
+    date: new Date().toLocaleDateString('ar-TN'),
   });
 });
 
@@ -168,7 +182,6 @@ app.post('/webhook', async (req, res) => {
   const body = req.body;
   if (body.object !== 'page') return res.sendStatus(404);
   res.status(200).send('EVENT_RECEIVED');
-
   for (const entry of body.entry) {
     for (const event of entry.messaging) {
       if (event.message && !event.message.is_echo) {
@@ -189,7 +202,6 @@ async function handleMessage(event) {
   if (!customerCarts[senderId]) customerCarts[senderId] = [];
   if (!customerInfo[senderId]) customerInfo[senderId] = {};
 
-  // ترحيب
   if (!newUsers.has(senderId)) {
     newUsers.add(senderId);
     stats.totalConversations++;
@@ -206,123 +218,148 @@ async function handleMessage(event) {
     }
 
     const name = customerInfo[senderId].name;
-    await sendMessage(senderId, `Bienvenue ${name} à la Librairie Mayar! 📚✨`);
-    await delay(700);
-    await sendMessageWithQuickReplies(senderId, CURRENT_OFFERS,
-      ["🛒 Commander", "📋 Catalogue", "📍 Adresse", "📞 Appeler"]
+    await sendMessage(senderId,
+      `مرحبا بيك ${name} في مكتبة ميار! 📚✨\nنقدرو نعاونوك تلقى كل ما تحتاج للدراسة.\n\nBienvenue ${name} à la Librairie Mayar! 📚✨`
+    );
+    await delay(800);
+    await sendMessageWithQuickReplies(senderId,
+      `شنوة تحب؟ / Que souhaitez-vous ?`,
+      ["🛒 نحب نشري", "📋 قائمة المنتجات", "🎉 العروض", "📍 العنوان", "📞 اتصل بنا"]
     );
     return;
   }
 
   const lowerText = text.toLowerCase().trim();
 
-  // Catalogue
-  if (lowerText.includes("catalogue") || lowerText.includes("produits") || lowerText.includes("قائمة") || text === "📋 Catalogue") {
+  if (lowerText.includes("قائمة") || lowerText.includes("منتجات") || lowerText.includes("catalogue") || lowerText.includes("produits") || text === "📋 قائمة المنتجات") {
     await sendMessage(senderId,
-`📋 Nos produits:
-📒 Cahiers: mسطر/كوس 1.5DT | رسم/موسيقى 2DT
-✏️ Stylos: حبر 0.8DT | رصاص 0.5DT | ألوان×12 4.5DT
-📐 Géométrie: مسطرة 1DT | طقم 5DT
-🎒 Autres: محفظة 3DT | غراء 1.2DT | مقص 2DT | حقيبة 25DT`
+`📋 منتجاتنا / Nos produits:
+📒 مسطر/كوس 1.5DT | رسم/موسيقى 2DT
+✏️ حبر 0.8DT | رصاص 0.5DT | ألوان×12 4.5DT | فلوماستر 6DT
+📐 مسطرة 1DT | طقم هندسة 5DT
+🎒 محفظة 3DT | غراء 1.2DT | مقص 2DT | حقيبة 25DT`
     );
     await delay(400);
-    await sendMessageWithQuickReplies(senderId, "Que souhaitez-vous? 😊",
-      ["🛒 Commander", "🎉 Promos", "📞 Appeler"]
+    await sendMessageWithQuickReplies(senderId, "شنوة تحب تشري؟ 😊",
+      ["🛒 نحب نشري", "🎉 العروض", "📞 اتصل بنا"]
     );
     return;
   }
 
-  // العروض
-  if (lowerText.includes("promo") || lowerText.includes("عروض") || lowerText.includes("réduction") || text === "🎉 Promos") {
+  if (lowerText.includes("عروض") || lowerText.includes("تخفيض") || lowerText.includes("promo") || text === "🎉 العروض") {
     await sendMessage(senderId, CURRENT_OFFERS);
     await delay(400);
-    await sendMessageWithQuickReplies(senderId, "Vous souhaitez en profiter? 😊",
-      ["🛒 Commander", "📋 Catalogue", "📞 Appeler"]
+    await sendMessageWithQuickReplies(senderId, "تحب تستفيد؟ 😊",
+      ["🛒 نحب نشري", "📋 قائمة المنتجات", "📞 اتصل بنا"]
     );
     return;
   }
 
-  // العنوان
-  if (lowerText.includes("adresse") || lowerText.includes("où") || lowerText.includes("فين") || text === "📍 Adresse") {
+  if (lowerText.includes("عنوان") || lowerText.includes("فين") || lowerText.includes("وين") || lowerText.includes("adresse") || lowerText.includes("où") || text === "📍 العنوان") {
     await sendMessage(senderId,
-      `📍 Rue de l'Environnement, en face du lycée Menzel Kamel\n🗺️ https://maps.app.goo.gl/3N9tuVpED4GxcpWz9\n🕐 8h - 19h`
+      `📍 شارع البيئة، مقابل معهد منزل كامل\n🗺️ https://maps.app.goo.gl/3N9tuVpED4GxcpWz9\n🕐 8h-19h كل يوم`
     );
     return;
   }
 
-  // اتصل
-  if (lowerText.includes("appel") || lowerText.includes("téléphone") || lowerText.includes("تليفون") || text === "📞 Appeler") {
-    await sendMessage(senderId, `📞 ${PHONE_NUMBER}\n🕐 8h - 19h, tous les jours`);
+  if (lowerText.includes("اتصل") || lowerText.includes("تليفون") || lowerText.includes("appel") || lowerText.includes("téléphone") || text === "📞 اتصل بنا") {
+    await sendMessage(senderId, `📞 ${PHONE_NUMBER}\n📍 شارع البيئة، مقابل معهد منزل كامل\n🕐 8h-19h`);
     return;
   }
 
-  // تأكيد طلبية
-  if (text === "✅ Confirmer" || lowerText.includes("confirmer") || lowerText.includes("أكد")) {
+  if (lowerText.includes("سلة") || lowerText.includes("panier") || text === "🛒 سلتي") {
     if (customerCarts[senderId].length === 0) {
-      await sendMessage(senderId, "Votre panier est vide! Choisissez des produits d'abord 😊");
+      await sendMessage(senderId, "🛒 السلة فارغة! شنوة تحب تشري؟");
+      await sendMessageWithQuickReplies(senderId, "اختار:", ["📋 قائمة المنتجات", "🎉 العروض"]);
+    } else {
+      let cartText = "🛒 سلتك:\n";
+      let total = 0;
+      customerCarts[senderId].forEach((item, i) => {
+        cartText += `${i+1}. ${item.name} ×${item.qty} = ${(item.price*item.qty).toFixed(3)}DT\n`;
+        total += item.price * item.qty;
+      });
+      cartText += `\n💰 المجموع: ${total.toFixed(3)}DT`;
+      await sendMessage(senderId, cartText);
+      await sendMessageWithQuickReplies(senderId, "شنوة تحب تعمل؟",
+        ["✅ أكّد الطلبية", "🗑️ فرّغ السلة", "📞 اتصل بنا"]
+      );
+    }
+    return;
+  }
+
+  if (lowerText.includes("فرّغ") || lowerText.includes("امسح") || text === "🗑️ فرّغ السلة") {
+    customerCarts[senderId] = [];
+    await sendMessage(senderId, "🗑️ تم تفريغ السلة! شنوة تحب تشري؟");
+    await sendMessageWithQuickReplies(senderId, "اختار:", ["📋 قائمة المنتجات", "🎉 العروض"]);
+    return;
+  }
+
+  if (lowerText.includes("أكّد") || lowerText.includes("أكد") || lowerText.includes("confirmer") || text === "✅ أكّد الطلبية") {
+    if (customerCarts[senderId].length === 0) {
+      await sendMessage(senderId, "السلة فارغة! اختار منتجات أولاً 😊");
       return;
     }
+    let cartText = "✅ تأكيد الطلبية:\n";
     let total = 0;
-    let cartText = "✅ Votre commande:\n";
     customerCarts[senderId].forEach((item, i) => {
       cartText += `${i+1}. ${item.name} ×${item.qty} = ${(item.price*item.qty).toFixed(3)}DT\n`;
       total += item.price * item.qty;
     });
-    cartText += `\n💰 Total: ${total.toFixed(3)}DT + livraison 2DT`;
+    cartText += `\n💰 المجموع: ${total.toFixed(3)}DT\n📦 توصيل: 2DT\n💵 الإجمالي: ${(total+2).toFixed(3)}DT`;
     await sendMessage(senderId, cartText);
     await delay(400);
-    await sendMessageWithQuickReplies(senderId, "Mode de réception?",
-      ["🚚 Livraison", "🏪 Retrait en magasin"]
+    await sendMessageWithQuickReplies(senderId, "كيفاش تحب تستلم؟",
+      ["🚚 توصيل", "🏪 نجي للمكتبة"]
     );
     stats.totalOrders++;
     stats.todayOrders++;
     return;
   }
 
-  // توصيل
-  if (text === "🚚 Livraison") {
+  if (text === "🚚 توصيل") {
     customerInfo[senderId].delivery = true;
-    await sendMessage(senderId, "🚚 Parfait! Donnez-nous votre adresse complète:");
+    await sendMessage(senderId, "🚚 باهي! اكتب عنوانك الكامل باش نوصلوهالك:");
     return;
   }
 
-  // استلام من المحل
-  if (text === "🏪 Retrait en magasin") {
+  if (text === "🏪 نجي للمكتبة") {
     customerInfo[senderId].delivery = false;
     await sendMessage(senderId,
-      `🏪 Votre commande est prête!\n📍 Rue de l'Environnement, en face du lycée\n🕐 8h-19h\nMerci ${customerInfo[senderId]?.name || ''}! 🙏`
+      `🏪 طلبيتك جاهزة!\n📍 شارع البيئة، مقابل معهد منزل كامل\n🕐 8h-19h | يعطيك الصحة ${customerInfo[senderId]?.name || ''} 🙏`
     );
     customerCarts[senderId] = [];
     return;
   }
 
-  // تقييم
   if (awaitingRating[senderId]) {
     awaitingRating[senderId] = false;
     if (["⭐⭐⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐"].includes(text)) {
-      await sendMessage(senderId, `Merci pour votre ${text}! À bientôt à la Librairie Mayar 📚🙏`);
+      await sendMessage(senderId, `يعطيك الصحة على تقييمك ${text} 🙏\nنتمنى نشوفك قريباً! 📚`);
     }
     return;
   }
 
-  // Groq
   const reply = await getGroqResponse(senderId, text);
-  await sendMessage(senderId, reply);
 
-  // أزرار كل 4 ردود
-  if (conversations[senderId].length % 4 === 0) {
-    await delay(400);
-    await sendMessageWithQuickReplies(senderId, "Autre chose? 😊",
-      ["🛒 Commander", "📋 Catalogue", "📍 Adresse", "📞 Appeler"]
-    );
+  if (reply.includes("سنحولك") || reply.includes("je vous transfère")) {
+    await sendMessage(senderId, reply);
+    await delay(600);
+    await sendMessage(senderId, `📞 ${PHONE_NUMBER}\nنردّو عليك على طول! 😊`);
+  } else {
+    await sendMessage(senderId, reply);
+    if (!reply.includes("✅") && conversations[senderId].length % 4 === 0) {
+      await delay(400);
+      await sendMessageWithQuickReplies(senderId, "حاجة أخرى؟ 😊",
+        ["🛒 سلتي", "📋 قائمة المنتجات", "🎉 العروض", "📞 اتصل بنا"]
+      );
+    }
   }
 
-  // تقييم بعد 16 رسالة
-  if (conversations[senderId].length === 16) {
+  if (conversations[senderId]?.length === 16) {
     await delay(2000);
     awaitingRating[senderId] = true;
     await sendMessageWithQuickReplies(senderId,
-      `${customerInfo[senderId]?.name || ''} comment évaluez-vous votre expérience? 😊`,
+      `${customerInfo[senderId]?.name || ''} كيفاش تقيّم تجربتك معانا؟ 😊`,
       ["⭐⭐⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐"]
     );
   }
@@ -335,9 +372,7 @@ async function sendMessageWithQuickReplies(recipientId, text, replies) {
       recipient: { id: recipientId },
       message: {
         text,
-        quick_replies: replies.map(q => ({
-          content_type: "text", title: q, payload: q,
-        })),
+        quick_replies: replies.map(q => ({ content_type: "text", title: q, payload: q })),
       },
     }
   ).catch(e => console.error("Quick reply error:", e.response?.data));
@@ -357,4 +392,6 @@ function delay(ms) {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 البوت يعمل على المنفذ ${PORT}`);
+  console.log(`📊 إحصاءات: http://localhost:${PORT}/stats`);
+  console.log(`📦 طلبيات: http://localhost:${PORT}/orders`);
 });
