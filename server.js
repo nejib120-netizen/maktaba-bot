@@ -143,6 +143,14 @@ const SERVICES = `🛠️ خدماتنا / Nos Services:
 📞 للمزيد اتصل: 29464720
 🕐 8h - 19h`;
 
+// ===== تذكير بالدخول المدرسي =====
+const BACK_TO_SCHOOL_MSG = `🎒 الدخول المدرسي قريب!
+لا تستنى الضغطة الأخيرة 😅
+✅ باكجات جاهزة من السنة 1 إلى 6
+✅ توصيل لباب الدار
+✅ الدفع عند الاستلام
+احجز باكاجك دبا قبل ما ينقص! 📚`;
+
 // ===== صور المنتجات =====
 const IMAGES = {
   welcome: "https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?w=800",
@@ -176,6 +184,18 @@ TON RÔLE: VENDRE, pas juste présenter. Conclure la vente dans Messenger.
 - Pose UNE question pour avancer la vente
 - "تحب تطلب الباكج؟" → si oui → bot demande nom et adresse
 - Prix toujours "ممتاز" / "très abordable"
+
+🎒 RENTRÉE SCOLAIRE:
+- Si client mentionne école, dراسة, تلميذ, rentrée → envoie le message de rentrée
+- Rappelle toujours que les packs sont prêts et la livraison est disponible
+- Crée un sentiment d'urgence: "قبل ما ينقص" / "avant la rupture de stock"
+
+🌍 QUESTIONS HORS SUJET:
+- Si le client pose une question générale (météo, recette, blague, traduction, calcul, conseil...) → réponds brièvement et naturellement
+- Après avoir répondu → ramène doucement la conversation vers la librairie
+- Exemple: client demande "شنوة عاصمة فرنسا؟" → "باريس 😊 وبالمناسبة، واش تحتاج حاجة من المكتبة؟"
+- Ne dis JAMAIS "je suis un bot de librairie, je ne peux pas répondre"
+- Sois utile ET vendeur
 
 🛠️ NOS SERVICES (en plus des fournitures):
 - نسخ وثائق / Photocopie
@@ -601,6 +621,21 @@ Si client demande un service → dis "contactez-nous au 29464720"
   // اتصل
   if (lowerText.includes("appel") || lowerText.includes("téléphone") || lowerText.includes("تليفون") || text === "📞 Appeler") {
     await sendMessage(senderId, `📞 ${PHONE_NUMBER}\n🕐 8h - 19h, tous les jours`);
+    return;
+  }
+
+  // تذكير بالدخول المدرسي
+  if (lowerText.includes("دخول مدرسي") || lowerText.includes("rentrée") || 
+      lowerText.includes("مدرسة") || lowerText.includes("école") ||
+      lowerText.includes("دراسة") || lowerText.includes("تلميذ") ||
+      lowerText.includes("élève") || lowerText.includes("أدوات") ||
+      lowerText.includes("fournitures")) {
+    await sendMessage(senderId, BACK_TO_SCHOOL_MSG);
+    await delay(500);
+    await sendMessageWithQuickReplies(senderId,
+      "أي سنة عندك؟ 😊",
+      ["📦 Sنة 1", "📦 Sنة 2", "📦 Sنة 3", "📦 Sنة 4", "📦 Sنة 5", "📦 Sنة 6"]
+    );
     return;
   }
 
