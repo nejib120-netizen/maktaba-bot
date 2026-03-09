@@ -132,6 +132,17 @@ const CURRENT_OFFERS = `🎉 Promotions Mayar:
 • Crayons couleur -15%
 • 5 cahiers achetés = le 6ème offert!`;
 
+const SERVICES = `🛠️ خدماتنا / Nos Services:
+✅ نسخ وثائق
+✅ بحوث مدرسية
+✅ ترسيم تلاميذ وطلاب
+✅ معالجة النصوص
+✅ حجز الفحص الفني للكرهبة
+✅ سيرة ذاتية احترافية
+
+📞 للمزيد اتصل: 29464720
+🕐 8h - 19h`;
+
 const SYSTEM_PROMPT = `Tu es le vendeur expert de la Librairie Mayar à Menzel Kamel.
 TON RÔLE: VENDRE, pas juste présenter. Conclure la vente dans Messenger.
 
@@ -154,6 +165,15 @@ TON RÔLE: VENDRE, pas juste présenter. Conclure la vente dans Messenger.
 - Pose UNE question pour avancer la vente
 - "تحب تطلب الباكج؟" → si oui → bot demande nom et adresse
 - Prix toujours "ممتاز" / "très abordable"
+
+🛠️ NOS SERVICES (en plus des fournitures):
+- نسخ وثائق / Photocopie
+- بحوث مدرسية / Recherches scolaires
+- ترسيم تلاميذ وطلاب / Inscription élèves
+- معالجة النصوص / Traitement de texte
+- حجز الفحص الفني للكرهبة / Contrôle technique
+- سيرة ذاتية احترافية / CV professionnel
+Si client demande un service → dis "contactez-nous au 29464720"
 
 📍 Rue de l'Environnement, en face du lycée Menzel Kamel
 🗺️ https://maps.app.goo.gl/3N9tuVpED4GxcpWz9
@@ -350,10 +370,10 @@ async function handleMessage(event) {
     }
 
     const name = customerInfo[senderId].name;
-    await sendMessage(senderId, `Bienvenue ${name} à la Librairie Mayar! 📚✨`);
-    await delay(700);
+    await sendMessage(senderId, `Bienvenue ${name} à la Librairie Mayar! 📚✨\n\n${SERVICES}`);
+    await delay(800);
     await sendMessageWithQuickReplies(senderId, CURRENT_OFFERS,
-      ["📦 Pack par classe", "🎉 Promos", "📍 Adresse", "📞 Appeler"]
+      ["📦 Pack par classe", "🛠️ Services", "📍 Adresse", "📞 Appeler"]
     );
     return;
   }
@@ -439,7 +459,7 @@ async function handleMessage(event) {
   if (lowerText.includes("pack") || lowerText.includes("باكج") || lowerText.includes("مجموعة") || text === "📦 Pack par classe") {
     await sendMessageWithQuickReplies(senderId,
       "📦 اختار السنة / Choisissez la classe:",
-      ["📦 Sسنة 1", "📦 Sسنة 2", "📦 Sسنة 3", "📦 Sسنة 4", "📦 Sسنة 5", "📦 Sسنة 6"]
+      ["📦 Sنة 1", "📦 Sنة 2", "📦 Sنة 3", "📦 Sنة 4", "📦 Sنة 5", "📦 Sنة 6"]
     );
     return;
   }
@@ -519,6 +539,19 @@ async function handleMessage(event) {
 
 
 
+  // الخدمات
+  if (lowerText.includes("service") || lowerText.includes("خدم") || lowerText.includes("نسخ") || 
+      lowerText.includes("بحث") || lowerText.includes("ترسيم") || lowerText.includes("سيرة") ||
+      lowerText.includes("فحص") || lowerText.includes("معالجة") || text === "🛠️ Services") {
+    await sendMessage(senderId, SERVICES);
+    await delay(500);
+    await sendMessageWithQuickReplies(senderId,
+      "أي خدمة تحتاج؟ نحكيوا معك 😊",
+      ["📞 Appeler", "📍 Adresse", "📦 Pack par classe"]
+    );
+    return;
+  }
+
   // العروض
   if (lowerText.includes("promo") || lowerText.includes("عروض") || lowerText.includes("réduction") || text === "🎉 Promos") {
     await sendMessage(senderId, CURRENT_OFFERS);
@@ -532,7 +565,16 @@ async function handleMessage(event) {
   // العنوان
   if (lowerText.includes("adresse") || lowerText.includes("où") || lowerText.includes("فين") || lowerText.includes("عنوان") || text === "📍 Adresse") {
     await sendMessage(senderId,
-      `📍 Rue de l'Environnement, en face du lycée Menzel Kamel\n🗺️ https://maps.app.goo.gl/3N9tuVpED4GxcpWz9\n🕐 8h - 19h`
+      `🛠️ NOS SERVICES (en plus des fournitures):
+- نسخ وثائق / Photocopie
+- بحوث مدرسية / Recherches scolaires
+- ترسيم تلاميذ وطلاب / Inscription élèves
+- معالجة النصوص / Traitement de texte
+- حجز الفحص الفني للكرهبة / Contrôle technique
+- سيرة ذاتية احترافية / CV professionnel
+Si client demande un service → dis "contactez-nous au 29464720"
+
+📍 Rue de l'Environnement, en face du lycée Menzel Kamel\n🗺️ https://maps.app.goo.gl/3N9tuVpED4GxcpWz9\n🕐 8h - 19h`
     );
     return;
   }
@@ -550,7 +592,7 @@ async function handleMessage(event) {
   if (conversations[senderId].length % 4 === 0) {
     await delay(400);
     await sendMessageWithQuickReplies(senderId, "Autre chose? 😊",
-      ["📦 Pack par classe", "🎉 Promos", "📍 Adresse", "📞 Appeler"]
+      ["📦 Pack par classe", "🛠️ Services", "📍 Adresse", "📞 Appeler"]
     );
   }
 }
