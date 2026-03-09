@@ -439,7 +439,7 @@ async function handleMessage(event) {
   if (lowerText.includes("pack") || lowerText.includes("باكج") || lowerText.includes("مجموعة") || text === "📦 Pack par classe") {
     await sendMessageWithQuickReplies(senderId,
       "📦 اختار السنة / Choisissez la classe:",
-      ["📦 Sنة 1", "📦 Sنة 2", "📦 Sنة 3", "📦 Sنة 4", "📦 Sنة 5", "📦 Sنة 6"]
+      ["📦 Sسنة 1", "📦 Sسنة 2", "📦 Sسنة 3", "📦 Sسنة 4", "📦 Sسنة 5", "📦 Sسنة 6"]
     );
     return;
   }
