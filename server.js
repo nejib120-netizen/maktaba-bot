@@ -143,6 +143,17 @@ const SERVICES = `🛠️ خدماتنا / Nos Services:
 📞 للمزيد اتصل: 29464720
 🕐 8h - 19h`;
 
+// ===== صور المنتجات =====
+const IMAGES = {
+  welcome: "https://images.unsplash.com/photo-1456735190827-d1262f71b8a3?w=800",
+  packs: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800",
+  services: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800",
+  promos: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800",
+  grade1: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800",
+  grade6: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800",
+  stationery: "https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=800",
+};
+
 const SYSTEM_PROMPT = `Tu es le vendeur expert de la Librairie Mayar à Menzel Kamel.
 TON RÔLE: VENDRE, pas juste présenter. Conclure la vente dans Messenger.
 
@@ -370,6 +381,8 @@ async function handleMessage(event) {
     }
 
     const name = customerInfo[senderId].name;
+    await sendImage(senderId, IMAGES.welcome);
+    await delay(500);
     await sendMessage(senderId, `Bienvenue ${name} à la Librairie Mayar! 📚✨\n\n${SERVICES}`);
     await delay(800);
     await sendMessageWithQuickReplies(senderId, CURRENT_OFFERS,
@@ -457,6 +470,8 @@ async function handleMessage(event) {
 
   // ===== باكجات =====
   if (lowerText.includes("pack") || lowerText.includes("باكج") || lowerText.includes("مجموعة") || text === "📦 Pack par classe") {
+    await sendImage(senderId, IMAGES.packs);
+    await delay(400);
     await sendMessageWithQuickReplies(senderId,
       "📦 اختار السنة / Choisissez la classe:",
       ["📦 Sنة 1", "📦 Sنة 2", "📦 Sنة 3", "📦 Sنة 4", "📦 Sنة 5", "📦 Sنة 6"]
@@ -543,6 +558,8 @@ async function handleMessage(event) {
   if (lowerText.includes("service") || lowerText.includes("خدم") || lowerText.includes("نسخ") || 
       lowerText.includes("بحث") || lowerText.includes("ترسيم") || lowerText.includes("سيرة") ||
       lowerText.includes("فحص") || lowerText.includes("معالجة") || text === "🛠️ Services") {
+    await sendImage(senderId, IMAGES.services);
+    await delay(400);
     await sendMessage(senderId, SERVICES);
     await delay(500);
     await sendMessageWithQuickReplies(senderId,
@@ -554,6 +571,8 @@ async function handleMessage(event) {
 
   // العروض
   if (lowerText.includes("promo") || lowerText.includes("عروض") || lowerText.includes("réduction") || text === "🎉 Promos") {
+    await sendImage(senderId, IMAGES.promos);
+    await delay(400);
     await sendMessage(senderId, CURRENT_OFFERS);
     await delay(400);
     await sendMessageWithQuickReplies(senderId, "Vous souhaitez commander? 😊",
@@ -597,6 +616,24 @@ Si client demande un service → dis "contactez-nous au 29464720"
   }
 }
 
+async function sendImage(recipientId, imageUrl) {
+  await axios.post(
+    `https://graph.facebook.com/v18.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`,
+    {
+      recipient: { id: recipientId },
+      message: {
+        attachment: {
+          type: "image",
+          payload: {
+            url: imageUrl,
+            is_reusable: true
+          }
+        }
+      }
+    }
+  ).catch(e => console.error("Image error:", e.response?.data));
+}
+
 async function sendMessageWithQuickReplies(recipientId, text, replies) {
   const trimmedReplies = replies.map(q => q.substring(0, 20));
   await axios.post(
@@ -623,6 +660,11 @@ async function sendMessage(recipientId, text) {
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+// ===== لوحة التحكم =====
+app.get('/dashboard', (req, res) => {
+  res.sendFile(__dirname + '/dashboard.html');
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
