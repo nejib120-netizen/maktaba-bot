@@ -168,6 +168,92 @@ const IMAGES = {
   stationery: "https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=800",
 };
 
+// ===== ردود التعليقات =====
+const COMMENT_REPLIES = {
+  price: {
+    keywords: ["بكاش", "ثمن", "prix", "combien", "بكم", "غالي", "رخيص"],
+    reply: "مرحباً! 😊 الأسعار ممتازة 💚\n👉 راسلنا على Messenger نعطيك كل الباكجات بالأسعار الكاملة!"
+  },
+  packs: {
+    keywords: ["باكج", "pack", "أدوات", "قائمة", "ابتدائي"],
+    reply: "عندنا باكجات جاهزة لكل السنوات من 1 إلى 6 📦✨\n👉 راسلنا على Messenger وابعثلنا السنة — نبعثوا القائمة فوراً!"
+  },
+  services: {
+    keywords: ["نسخ", "بحث", "سيرة", "ترسيم", "فحص", "خدمات", "service"],
+    reply: "نعم نوفر هذه الخدمة! ✅\n👉 راسلنا على Messenger للمزيد من التفاصيل 😊"
+  },
+  delivery: {
+    keywords: ["توصيل", "livraison", "يوصل", "delivery"],
+    reply: "نعم نوصّلو داخل منزل كامل بـ 2 DT فقط! 🚚✨\n👉 راسلنا على Messenger لتسجيل طلبيتك"
+  },
+  positive: {
+    keywords: ["برشة", "ممتاز", "بارك", "شكرا", "merci", "super", "مزيان", "زوين", "باهي"],
+    reply: "شكراً جزيلاً على كلامك الطيب! 🙏❤️\nيسعدنا خدمتك دائماً في مكتبة ميار 📚"
+  },
+  info: {
+    keywords: ["فين", "عنوان", "ساعة", "أوقات", "adresse", "horaire", "وقتاش"],
+    reply: "📍 شارع البيئة، مقابل معهد منزل كامل\n🕐 8h - 19h كل الأيام\n👉 راسلنا على Messenger لأي معلومة!"
+  },
+  default: {
+    reply: "مرحباً! 😊 شكراً على تعليقك ❤️\n👉 راسلنا على Messenger وسنجيب على كل أسئلتك فوراً! 📚✨"
+  }
+};
+
+function detectCommentType(text) {
+  if (!text) return 'default';
+  const lower = text.toLowerCase();
+  for (const [type, data] of Object.entries(COMMENT_REPLIES)) {
+    if (type === 'default') continue;
+    if (data.keywords && data.keywords.some(k => lower.includes(k))) return type;
+  }
+  return 'default';
+}
+
+async function replyToComment(commentId, message) {
+  try {
+    await axios.post(
+      `https://graph.facebook.com/v18.0/${commentId}/comments`,
+      { message },
+      { params: { access_token: PAGE_ACCESS_TOKEN } }
+    );
+    console.log(`✅ رد على تعليق: ${commentId}`);
+  } catch (e) {
+    console.error("❌ خطأ في الرد على التعليق:", e.response?.data?.error?.message);
+  }
+}
+
+async function likeComment(commentId) {
+  try {
+    await axios.post(
+      `https://graph.facebook.com/v18.0/${commentId}/likes`,
+      {},
+      { params: { access_token: PAGE_ACCESS_TOKEN } }
+    );
+    console.log(`👍 لايك: ${commentId}`);
+  } catch (e) {
+    console.error("❌ خطأ في اللايك:", e.response?.data?.error?.message);
+  }
+}
+
+async function handleComment(data) {
+  const pageId = process.env.PAGE_ID;
+  if (data.from?.id === pageId) return; // تجاهل تعليقات الصفحة نفسها
+  if (data.parent_id && data.parent_id !== data.post_id) return; // تجاهل الردود
+
+  const commentId = data.comment_id;
+  const text = data.message || "";
+  const userName = (data.from?.name || "").split(' ')[0] || "مرحباً";
+
+  console.log(`💬 تعليق من ${userName}: ${text}`);
+
+  await likeComment(commentId);
+  await delay(500);
+
+  const type = detectCommentType(text);
+  const replyText = `${userName}، ${COMMENT_REPLIES[type].reply}`;
+  await replyToComment(commentId, replyText);
+}
+
 const SYSTEM_PROMPT = `Tu es le vendeur expert de la Librairie Mayar à Menzel Kamel.
 TON RÔLE: VENDRE, pas juste présenter. Conclure la vente dans Messenger.
 
@@ -421,9 +507,20 @@ app.post('/webhook', async (req, res) => {
   if (body.object !== 'page') return res.sendStatus(404);
   res.status(200).send('EVENT_RECEIVED');
   for (const entry of body.entry) {
-    for (const event of entry.messaging) {
-      if (event.message && !event.message.is_echo) {
-        await handleMessage(event);
+    // ===== تعليقات =====
+    if (entry.changes) {
+      for (const change of entry.changes) {
+        if (change.field === 'feed' && change.value?.item === 'comment') {
+          await handleComment(change.value);
+        }
+      }
+    }
+    // ===== رسائل Messenger =====
+    if (entry.messaging) {
+      for (const event of entry.messaging) {
+        if (event.message && !event.message.is_echo) {
+          await handleMessage(event);
+        }
       }
     }
   }
