@@ -230,6 +230,23 @@ const customerInfo = {};
 const ORDER_STEPS = {};
 // step: null | 'ask_name' | 'ask_address' | 'confirm' | 'done'
 
+// ===== نظام النقاط =====
+const loyaltyPoints = {};
+const POINTS_PER_ORDER = 10;
+
+// ===== أكواد التخفيض =====
+const DISCOUNT_CODES = {
+  "MAYAR10": { percent: 10, label: "خصم 10%" },
+  "MAYAR20": { percent: 20, label: "خصم 20%" },
+  "WELCOME": { percent: 15, label: "خصم الترحيب 15%" },
+};
+
+// ===== التقييمات =====
+const reviews = [];
+
+// ===== تتبع الطلبيات السابقة =====
+const previousOrders = {};
+
 async function getGroqResponse(senderId, userText) {
   if (!conversations[senderId]) conversations[senderId] = [];
   conversations[senderId].push({ role: "user", text: userText });
@@ -390,6 +407,15 @@ app.get('/orders', (req, res) => {
   res.json(orders);
 });
 
+app.get('/reviews', (req, res) => {
+  res.json({ total: reviews.length, reviews });
+});
+
+app.get('/loyalty/:userId', (req, res) => {
+  const pts = loyaltyPoints[req.params.userId] || 0;
+  res.json({ userId: req.params.userId, points: pts });
+});
+
 app.post('/webhook', async (req, res) => {
   const body = req.body;
   if (body.object !== 'page') return res.sendStatus(404);
@@ -406,6 +432,23 @@ app.post('/webhook', async (req, res) => {
 async function handleMessage(event) {
   const senderId = event.sender.id;
   const text = event.message?.text || event.message?.quick_reply?.payload;
+  // صورة قائمة المدرسة
+  if (!text && event.message?.attachments) {
+    const hasImage = event.message.attachments.some(a => a.type === 'image');
+    if (hasImage) {
+      if (!customerInfo[senderId]) customerInfo[senderId] = {};
+      await sendMessage(senderId, "📸 شفت صورتك! دبا نحللوا القائمة...");
+      await delay(1000);
+      await sendMessage(senderId, "✅ القائمة تبدو كاملة!\nعندنا الباكجات الجاهزة لكل السنوات — يتضمن كل شي في قائمتك 😊");
+      await delay(600);
+      await sendMessageWithQuickReplies(senderId,
+        "أي سنة ولدك/بنتك؟",
+        ["📦 Sنة 1", "📦 Sنة 2", "📦 Sنة 3", "📦 Sنة 4", "📦 Sنة 5", "📦 Sنة 6"]
+      );
+    }
+    return;
+  }
+
   if (!text) return;
 
   console.log(`📨 ${senderId}: ${text}`);
@@ -445,6 +488,24 @@ async function handleMessage(event) {
 
   const lowerText = text.toLowerCase().trim();
 
+  // ===== زبون قديم — طلبية سريعة =====
+  if (newUsers.has(senderId) && previousOrders[senderId] && !ORDER_STEPS[senderId]) {
+    const prev = previousOrders[senderId];
+    const isReorder = lowerText.includes("نفس") || lowerText.includes("عاود") || 
+      lowerText.includes("كيما") || lowerText.includes("même") || lowerText.includes("reorder");
+    if (isReorder) {
+      customerInfo[senderId].lastGrade = prev.grade;
+      customerInfo[senderId].pendingOrders = prev.orders;
+      ORDER_STEPS[senderId] = 'ask_name';
+      const pkg = GRADE_PACKAGES[prev.grade];
+      await sendMessage(senderId, `🔁 طلبيتك السابقة: ${pkg?.nameAR} (${pkg?.total} DT)
+نبدأ نسجلوها مباشرة!`);
+      await delay(500);
+      await sendMessage(senderId, "اكتب اسمك الكامل:");
+      return;
+    }
+  }
+
   // ===== سيرورة البيع =====
 
   // المرحلة 1: طلب الاسم
@@ -465,20 +526,32 @@ async function handleMessage(event) {
     let subtotal = 0;
 
     if (pendingOrders && pendingOrders.length > 1) {
-      // طلبيات متعددة
       const { subtotal: st, lines } = calculateTotal(pendingOrders);
       subtotal = st;
       orderSummary = lines;
     } else {
-      // طلبية واحدة
       const pkg = GRADE_PACKAGES[customerInfo[senderId].lastGrade];
       subtotal = pkg ? pkg.total : 0;
       orderSummary = `📦 ${pkg?.nameAR || 'باكج'}: ${subtotal} DT\n`;
     }
 
-    const total = subtotal + 2;
+    // تطبيق الخصم
+    const disc = customerInfo[senderId].discount;
+    let discountLine = "";
+    let finalSubtotal = subtotal;
+    if (disc) {
+      const saved = Math.round(subtotal * disc.percent / 100);
+      finalSubtotal = subtotal - saved;
+      discountLine = `🎉 ${disc.label}: -${saved} DT\n`;
+    }
+
+    // نقاط الولاء
+    const pts = loyaltyPoints[senderId] || 0;
+    const ptsLine = pts > 0 ? `⭐ نقاطك: ${pts} نقطة\n` : "";
+
+    const total = finalSubtotal + 2;
     await sendMessage(senderId,
-      `✅ تأكيد الطلبية:\n👤 ${customerInfo[senderId].orderName}\n📍 ${text}\n\n${orderSummary}\n🚚 توصيل: 2 DT\n💰 المجموع: ${total} DT\n💵 الدفع عند الاستلام`
+      `✅ تأكيد الطلبية:\n👤 ${customerInfo[senderId].orderName}\n📍 ${text}\n\n${orderSummary}${discountLine}${ptsLine}🚚 توصيل: 2 DT\n💰 المجموع: ${total} DT\n💵 الدفع عند الاستلام`
     );
     await delay(600);
     await sendMessageWithQuickReplies(senderId, "واش تؤكد الطلبية؟ 😊",
@@ -495,9 +568,24 @@ async function handleMessage(event) {
       ORDER_STEPS[senderId] = 'done';
       stats.totalOrders++;
       stats.todayOrders++;
+
+      // نقاط الولاء
+      loyaltyPoints[senderId] = (loyaltyPoints[senderId] || 0) + POINTS_PER_ORDER;
+      const totalPts = loyaltyPoints[senderId];
+
+      // حفظ الطلبية السابقة
+      previousOrders[senderId] = {
+        grade: customerInfo[senderId].lastGrade,
+        orders: customerInfo[senderId].pendingOrders,
+        time: customerInfo[senderId].orderTime,
+      };
+
+      // حذف كود الخصم بعد الاستعمال
+      delete customerInfo[senderId].discount;
+
       console.log(`🛒 طلبية جديدة: ${customerInfo[senderId].orderName} - ${customerInfo[senderId].orderAddress}`);
       await sendMessage(senderId,
-        `🎉 طلبيتك مسجّلة!\nسنتصل بيك قريباً على Facebook للتأكيد.\nشكراً على ثقتك في مكتبة ميار! 📚🙏`
+        `🎉 طلبيتك مسجّلة!\nسنتصل بيك قريباً للتأكيد.\n⭐ ربحت ${POINTS_PER_ORDER} نقاط — رصيدك: ${totalPts} نقطة\nشكراً على ثقتك في مكتبة ميار! 📚🙏`
       );
       await delay(1000);
       awaitingRating[senderId] = true;
@@ -515,6 +603,12 @@ async function handleMessage(event) {
   if (awaitingRating[senderId]) {
     awaitingRating[senderId] = false;
     if (["⭐⭐⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐"].includes(text)) {
+      reviews.push({
+        name: customerInfo[senderId]?.orderName || customerInfo[senderId]?.name || 'زبون',
+        rating: text,
+        grade: customerInfo[senderId]?.lastGrade,
+        time: new Date().toLocaleString('fr-TN'),
+      });
       await sendMessage(senderId, `Merci pour votre ${text}! À bientôt à la Librairie Mayar 📚🙏`);
     }
     return;
@@ -668,6 +762,30 @@ Si client demande un service → dis "contactez-nous au 29464720"
       "أي سنة عندك؟ 😊",
       ["📦 Sنة 1", "📦 Sنة 2", "📦 Sنة 3", "📦 Sنة 4", "📦 Sنة 5", "📦 Sنة 6"]
     );
+    return;
+  }
+
+  // نقاط الولاء
+  if (lowerText.includes("نقاط") || lowerText.includes("points") || lowerText.includes("رصيد")) {
+    const pts = loyaltyPoints[senderId] || 0;
+    await sendMessage(senderId, `⭐ رصيدك: ${pts} نقطة
+${pts >= 50 ? "🎁 مبروك! تستحق خصم خاص — اتصل بنا 📞" : `تحتاج ${50 - pts} نقطة للوصول لخصم خاص 🎯`}`);
+    return;
+  }
+
+  // تقييمات الزبائن
+  if (lowerText.includes("تقييم") || lowerText.includes("avis") || lowerText.includes("تقييمات")) {
+    if (reviews.length === 0) {
+      await sendMessage(senderId, "ما كاش تقييمات بعد — كون أول من يقيّم! 😊");
+    } else {
+      const last3 = reviews.slice(-3);
+      let msg = `⭐ آخر التقييمات (${reviews.length} تقييم):
+
+`;
+      last3.forEach(r => { msg += `${r.rating} — ${r.name}
+`; });
+      await sendMessage(senderId, msg);
+    }
     return;
   }
 
