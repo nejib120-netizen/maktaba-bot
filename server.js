@@ -327,13 +327,13 @@ function detectMultipleOrders(text) {
     }
   }
 
-  // نمط 2: سنة + كلمة ترتيبية  (مثال: "سنة رابعة" أو "ولدي سنة رابعة")
+  // نمط 2: كلمة ترتيبية — مع أو بدون "سنة" (مثال: "سنة رابعة" أو "ولدي رابعة" أو "للثانية")
   if (orders.length === 0) {
     for (const [word, grade] of Object.entries(ordinals)) {
-      const regex = new RegExp(`(?:سنة|année|للسنة)\s*${word}|${word}\s*(?:سنة|année)`, 'gi');
-      if (regex.test(t) && GRADE_PACKAGES[grade]) {
-        // كشف كمية إذا موجودة قبل الكلمة
-        const qtyMatch = new RegExp(`(\d+)\s*(?:باكج|نسخ|ولد|بنت)?\s*(?:سنة)?\s*${word}`, 'gi').exec(t);
+      // يكشف الكلمة في أي مكان في النص
+      if (t.includes(word) && GRADE_PACKAGES[grade]) {
+        const qtyRegex = new RegExp(`(\d+)\s*(?:باكج|نسخ|ولد|بنت|طفل)?\s*(?:سنة|للسنة)?\s*${word}`);
+        const qtyMatch = qtyRegex.exec(t);
         const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
         if (!orders.find(o => o.grade === grade)) {
           orders.push({ qty: Math.min(qty, 20), grade });
