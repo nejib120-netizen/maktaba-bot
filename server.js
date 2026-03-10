@@ -132,6 +132,12 @@ const CURRENT_OFFERS = `🎉 Promotions Mayar:
 • Crayons couleur -15%
 • 5 cahiers achetés = le 6ème offert!`;
 
+const BACK_TO_SCHOOL = `🎒 الدخول المدرسي قرب! 📚
+باكجاتنا جاهزة لكل السنوات من 1 إلى 6
+✅ كل شي في باكج واحد بثمن ممتاز
+🚚 توصيل داخل منزل كامل بـ 2 DT فقط
+⏰ احجز باكجك قبل ما ينفد المخزون!`;
+
 const SERVICES = `🛠️ خدماتنا / Nos Services:
 ✅ نسخ وثائق
 ✅ بحوث مدرسية
@@ -189,6 +195,11 @@ TON RÔLE: VENDRE, pas juste présenter. Conclure la vente dans Messenger.
 - Si client mentionne école, dراسة, تلميذ, rentrée → envoie le message de rentrée
 - Rappelle toujours que les packs sont prêts et la livraison est disponible
 - Crée un sentiment d'urgence: "قبل ما ينقص" / "avant la rupture de stock"
+
+🎒 RAPPEL RENTRÉE SCOLAIRE:
+- Rappelle régulièrement que la rentrée approche
+- Si client hésite → "الدخول المدرسي قرب، الباكجات تنفد بسرعة! احجز دبا 🎒"
+- Crée de l'urgence naturelle sans être agressif
 
 🌍 QUESTIONS HORS SUJET:
 - Si le client pose une question générale (météo, recette, blague, traduction, calcul, conseil...) → réponds brièvement et naturellement
@@ -276,31 +287,50 @@ function detectGrade(text) {
 // ===== كشف طلبيات متعددة =====
 function detectMultipleOrders(text) {
   const orders = [];
-  // نمط: رقم + سنة + رقم
-  // مثال: "2 سنة 3 و 4 سنة 5" أو "باكجين سنة 3 و 3 سنة 6"
-  const patterns = [
-    /(\d+)\s*(?:باكج|pack|نسخ|قطع)?\s*(?:سنة|année|nة)\s*(\d)/gi,
-    /(\d+)\s*x\s*(?:سنة|année|nة)\s*(\d)/gi,
-  ];
+  const t = text;
 
-  for (const pattern of patterns) {
-    let match;
-    while ((match = pattern.exec(text)) !== null) {
-      const qty = parseInt(match[1]);
-      const grade = match[2];
-      if (GRADE_PACKAGES[grade] && qty > 0 && qty <= 20) {
-        orders.push({ qty, grade });
+  // خريطة الأعداد الترتيبية → أرقام
+  const ordinals = {
+    "أولى": "1", "اولى": "1", "الأولى": "1", "الاولى": "1", "أول": "1", "اول": "1",
+    "ثانية": "2", "الثانية": "2", "ثاني": "2", "الثاني": "2",
+    "ثالثة": "3", "الثالثة": "3", "ثالث": "3", "الثالث": "3",
+    "رابعة": "4", "الرابعة": "4", "رابع": "4", "الرابع": "4",
+    "خامسة": "5", "الخامسة": "5", "خامس": "5", "الخامس": "5",
+    "سادسة": "6", "السادسة": "6", "سادس": "6", "السادس": "6",
+  };
+
+  // نمط 1: رقم × سنة رقم  (مثال: "2 سنة 3")
+  const numPattern = /(\d+)\s*(?:باكج|pack|نسخ|قطع|x)?\s*(?:سنة|année|nة)\s*(\d)/gi;
+  let match;
+  while ((match = numPattern.exec(t)) !== null) {
+    const qty = parseInt(match[1]);
+    const grade = match[2];
+    if (GRADE_PACKAGES[grade] && qty > 0 && qty <= 20) {
+      orders.push({ qty, grade });
+    }
+  }
+
+  // نمط 2: سنة + كلمة ترتيبية  (مثال: "سنة رابعة")
+  if (orders.length === 0) {
+    for (const [word, grade] of Object.entries(ordinals)) {
+      const regex = new RegExp(`(?:سنة|année)\s*${word}|${word}\s*(?:سنة|année)`, 'gi');
+      if (regex.test(t) && GRADE_PACKAGES[grade]) {
+        // كشف كمية إذا موجودة قبل الكلمة
+        const qtyMatch = new RegExp(`(\d+)\s*(?:باكج|نسخ|ولد|بنت)?\s*(?:سنة)?\s*${word}`, 'gi').exec(t);
+        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+        if (!orders.find(o => o.grade === grade)) {
+          orders.push({ qty: Math.min(qty, 20), grade });
+        }
       }
     }
   }
 
-  // إذا ما لقاش نمط متعدد، جرب نمط بسيط
+  // نمط 3: سنة + رقم بسيط  (مثال: "سنة 5")
   if (orders.length === 0) {
     const simple = /(?:سنة|année|nة)\s*(\d)/gi;
-    let match;
-    while ((match = simple.exec(text)) !== null) {
+    while ((match = simple.exec(t)) !== null) {
       const grade = match[1];
-      if (GRADE_PACKAGES[grade]) {
+      if (GRADE_PACKAGES[grade] && !orders.find(o => o.grade === grade)) {
         orders.push({ qty: 1, grade });
       }
     }
@@ -403,7 +433,9 @@ async function handleMessage(event) {
     const name = customerInfo[senderId].name;
     await sendImage(senderId, IMAGES.welcome);
     await delay(500);
-    await sendMessage(senderId, `Bienvenue ${name} à la Librairie Mayar! 📚✨\n\n${SERVICES}`);
+    await sendMessage(senderId, `Bienvenue ${name} à la Librairie Mayar! 📚✨\n\n${BACK_TO_SCHOOL}`);
+    await delay(800);
+    await sendMessage(senderId, SERVICES);
     await delay(800);
     await sendMessageWithQuickReplies(senderId, CURRENT_OFFERS,
       ["📦 Pack par classe", "🛠️ Services", "📍 Adresse", "📞 Appeler"]
