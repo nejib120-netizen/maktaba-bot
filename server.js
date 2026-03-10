@@ -272,8 +272,8 @@ TON RÔLE: VENDRE, pas juste présenter. Conclure la vente dans Messenger.
 
 🌍 QUESTIONS HORS SUJET:
 - Réponds brièvement puis ramène vers la librairie
-
-📍 Rue de l'Environnement, en face du lycée Menzel Kamel
+📍 Rue de l'Environnement, en face du college  Menzel Kamel
+🗺️ https://maps.app.goo.gl/3N9tuVpED4GxcpWz9
 🕐 8h-19h | 📞 ${PHONE_NUMBER} | Livraison: 2DT`;
 
 const conversations = {};
