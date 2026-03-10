@@ -310,10 +310,10 @@ function detectMultipleOrders(text) {
     }
   }
 
-  // نمط 2: سنة + كلمة ترتيبية  (مثال: "سنة رابعة")
+  // نمط 2: سنة + كلمة ترتيبية  (مثال: "سنة رابعة" أو "ولدي سنة رابعة")
   if (orders.length === 0) {
     for (const [word, grade] of Object.entries(ordinals)) {
-      const regex = new RegExp(`(?:سنة|année)\s*${word}|${word}\s*(?:سنة|année)`, 'gi');
+      const regex = new RegExp(`(?:سنة|année|للسنة)\s*${word}|${word}\s*(?:سنة|année)`, 'gi');
       if (regex.test(t) && GRADE_PACKAGES[grade]) {
         // كشف كمية إذا موجودة قبل الكلمة
         const qtyMatch = new RegExp(`(\d+)\s*(?:باكج|نسخ|ولد|بنت)?\s*(?:سنة)?\s*${word}`, 'gi').exec(t);
@@ -573,7 +573,7 @@ async function handleMessage(event) {
   }
 
   // زر تأكيد الطلب → يبدأ سيرورة البيع
-  if (text === "✅ نعم، نطلبه!" || text === "✅ نعم، نطلبه" || text === "✅ نعم، نطلبهم!") {
+  if (text === "✅ نعم، نطلبه!" || text === "✅ نعم، نطلبه" || text === "✅ نعم، نطلبهم!" || lowerText === "نعم" || lowerText === "yes" || lowerText === "oui" || lowerText === "أيه" || lowerText === "آه") {
     if (!customerInfo[senderId].lastGrade) {
       await sendMessageWithQuickReplies(senderId, "أي سنة تحب تطلب؟",
         ["📦 Sنة 1", "📦 Sنة 2", "📦 Sنة 3", "📦 Sنة 4", "📦 Sنة 5", "📦 Sنة 6"]
