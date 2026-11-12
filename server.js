@@ -251,7 +251,7 @@ async function getGroqResponse(senderId, userText) {
     ];
     const response = await axios.post(
       "https://api.groq.com/openai/v1/chat/completions",
-      { model: "llama-3.3-70b-versatile", messages, temperature: 0.3, max_tokens: 300 },
+    { model: process.env.GROQ_MODEL || "llama-3.1-8b-instant", messages, temperature: 0.3, max_tokens: 300 },
       { headers: { Authorization: `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" } }
     );
     const replyText = response.data.choices[0].message.content.trim();
